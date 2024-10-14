@@ -1,0 +1,144 @@
+---
+title: Reproducible environments in R using `renv`
+author:
+  - name:
+      given: David
+      family: Schoch
+    email: david.schoch@gesis.org
+    orcid: 0000-0003-2952-4812
+    affiliations:
+      - name: "GESIS - Leibniz Institute for the Social Sciences"
+csl: apa.csl
+format:
+  html: default
+  ipynb: default
+license: CC BY
+---
+
+
+
+## Learning Objectives
+
+By the end of this tutorial, you will be able to
+
+1. Understand why reproducible environments are necessary.
+1. Set up `renv` in your R project.
+2. Install and manage packages using `renv`.
+3. Save, restore, and share your project's environment.
+
+
+## Target audience
+
+This tutorial is aimed at beginners who have not used `renv` or other project dependency management tools before but have a basic understanding of organizing a research project in a specific folder structure (TODO: Explain). 
+
+## What is `renv`?
+
+[`renv`](https://cran.r-project.org/package=renv) is a package management tool for R that helps **isolate** project dependencies, ensuring that the packages used for a specific project are pinned to particular versions. This helps to make your projects more **reproducible** and **portable** by avoiding issues that can arise from updates or changes to packages on CRAN or other repositories.
+
+## Why is this necessary?
+
+Reproducibility is a key aspect of scientific research and data analysis. When someone else (or even you at a later date) tries to replicate your results, it's crucial that they use the same software environment. In R, this means using the same package versions. Over time, packages are updated, deprecated, or changed in ways that may alter the behavior of functions. By pinning package versions, you ensure that your analysis will yield the same results, regardless of changes to the external package ecosystem.
+
+For example, if you develop a model using version 1.2 of a package and someone runs the same code using version 1.5 (with breaking changes), they may get different results, making your research less reproducible. Pinning versions helps avoid this problem by locking in the exact versions of packages you used when developing your analysis.
+
+## Setting up `renv` for a project
+
+### Step 1: Install and load the package 
+You can install the renv package from CRAN using:
+
+```r
+#| label: install-renv
+install.packages("renv")
+library(renv)
+```
+
+### Step 2: Initialize `renv` in your project
+
+Navigate to your project directory in R and initialize renv:
+
+```r
+# label: renv-init
+init()
+```
+
+This will
+
+* Create a renv environment within your project folder.
+* Scan your project for package dependencies.
+* Create a lockfile (`renv.lock`) that tracks the specific versions of packages you are using.
+
+The project library, `renv/library`, is a library that contains all packages currently used by your project. This is the most important functionality of renv. Instead of using the globally installed version of a package, `renv` sets up a local library of packages which only contains the packages used in the specific project. This allows you to **isolate** the dependencies for you project. Every project has its own library with different packages and different package versions and there is no need to install specific versions globally when jumping from one project to the next.
+
+The lockfile, `renv.lock`, records the metadata about every package. This is important for portability of the project. The 
+lockfile is enough for other researchers to setup an R environment that has exactly the package versions needed to work with your code.
+
+`init()` also creates a project R profile, `.Rprofile`. This file runs every time you start an instance of R in your project and configure the R session to use the project library. So there is no need to do this manually everytime you want to work with your project. 
+
+### Step 3: Installing and managing packages
+
+When renv is active, you can install packages as usual:
+
+```r
+#| label: example install
+install.packages("tidyverse")
+```
+
+These packages will be installed in your project-specific library instead of the global R library, ensuring that the versions are isolated for this particular project.
+
+To list the installed packages in your project:
+```r
+#| label: list-pkgs
+status()
+```
+
+When you install packages in a renv-managed project, their versions are automatically pinned in the `renv.lock` file. To save the current state of the environment, for instance after installing a new package, run:
+```r
+#| label: update-renv
+snapshot()
+```
+
+This command updates the `renv.lock` file with the exact versions of the packages currently installed in your project.
+
+### Step 4: Restoring your environment
+
+To restore the environment (e.g., if you’re working on a different machine or sharing your project with someone else), you can use:
+
+```r
+#| label: renv-restore
+restore()
+```
+
+This command installs the exact package versions listed in the `renv.lock` file, ensuring that the environment matches the one used when the project was developed.
+
+## Caveats
+
+Using `renv` is not ensuring complete reproducibility of a research project. It is merely a tool which helps with one part of the overall problem: R packages. There are a number of other pieces that renv doesn’t currently provide much help with:
+
+* **R version**: While `renv` tracks the used version of R, it does not install the version when the project is ported. While different versions are less likely to break projects like different versions of R packages, there is still the possibility that a new version of R introduces new features, or old ones are deprecated.
+
+* **Operating system, versions of system libraries, compiler versions**: Keeping a ‘stable’ machine image is a separate and more complex challenge than pinning package versions. A possible solution is to use [docker](https://en.wikipedia.org/wiki/Docker_(software)). The documentation of `renv` includes a section on [using docker with renv](https://rstudio.github.io/renv/articles/docker.html). [LINK TO METHODS HUB TUTORIAL]
+
+## Alternatives to renv
+
+While `renv` is a popular tool for package management in R, there are other options you may want to consider, depending on your workflow.
+
+### `packrat`
+
+[`packrat`](https://cran.r-project.org/package=packrat) was the original package management solution for R, providing similar functionality to `renv`. However, `renv` is generally considered a more modern and improved version of `packrat`, offering better performance and usability. `packrat` is still available but has largely been superseded by `renv`.
+
+### Docker
+
+Docker is a platform for containerization, which allows you to package your entire environment, including R, the operating system, and all dependencies. While renv focuses on managing R package versions, Docker can be used to capture the entire computational environment. This makes Docker a robust solution for complete reproducibility but requires more setup than renv.
+[LINK TO OUR DOCKER TUTORIALS]
+
+### `groundhog`
+
+[`groundhog`](https://cran.r-project.org/package=groundhog) is another package management tool that enables you to install packages as they existed on a specific date. This can be useful if you want to ensure that you are using the exact versions of packages that were available at a particular point in time, without needing to manage a lockfile like renv does.
+
+### `rang`
+
+Although [`rang`](https://cran.r-project.org/package=rang) can also be used to ensure the current R computational environment can be reconstructed by future researchers, this package gears towards reconstructing historical R computational environments which have not been completely declared. That is, if you have a project that was not setup with `renv`, `rang` can help to make the project reproducible post-hoc.
+
+## Further Material
+
+[Official documentation](https://rstudio.github.io/renv/) including a series of tutorials
